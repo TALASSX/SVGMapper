@@ -1,0 +1,15 @@
+<UserControl x:Class="SVGMapper.Views.FloorPlanView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:SVGMapper.Controls"
+             xmlns:local="clr-namespace:SVGMapper.Views">
+    <Grid>
+        <controls:ZoomableCanvas x:Name="ZoomCanvas"/>
+
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="8">
+            <ToggleButton x:Name="PolygonToggle" Content="Polygon" Width="80"/>
+            <Button Content="Close Polygon" Width="100" Margin="6,0,0,0" Click="ClosePolygon_Click"/>
+            <Button Content="Clear Rooms" Width="90" Margin="6,0,0,0" Click="ClearRooms_Click"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

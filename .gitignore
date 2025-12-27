@@ -1,0 +1,41 @@
+## Ignore Visual Studio temporary files, build results, and user-specific files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build directories
+**/bin/
+**/obj/
+
+# Rider/IDE files
+*.idea/
+*.iml
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# NuGet
+*.nupkg
+# NuGet Packages folder
+**/packages/
+
+# Visual Studio profiler
+*.psess
+*.vsp
+
+# Logs
+*.log
+
+# Backup folders
+SVGMapper.Original_Backup/
+
+# Executables
+*.exe
+*.dll
+*.pdb
+
+# OneDrive temporary files
+~$*

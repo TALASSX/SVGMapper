@@ -6,11 +6,20 @@ using System.Windows.Controls;
 using SVGMapper.Minimal.ViewModels;
 using SVGMapper.Minimal.Models;
 
+#nullable disable
+
 namespace SVGMapper.Minimal
 {
     public partial class MainWindow : Window
     {
-        private void EnsurePointsFromNormalized(Models.PolygonRoom room, System.Windows.Media.Imaging.BitmapSource? bmp)
+        private bool _isPanning = false;
+        private System.Windows.Point _panStart;
+        private double _panStartOffsetX;
+        private double _panStartOffsetY;
+        private const double ZoomMin = 0.25;
+        private const double ZoomMax = 4.0;
+        private const double ZoomStep = 1.1; // multiplier for wheel zoom
+        private void EnsurePointsFromNormalized(Models.PolygonRoom? room, System.Windows.Media.Imaging.BitmapSource? bmp)
         {
             if (room == null || bmp == null) return;
             if ((room.Points == null || room.Points.Count == 0) && room.NormalizedPoints != null && room.NormalizedPoints.Count > 0)
@@ -25,7 +34,7 @@ namespace SVGMapper.Minimal
         // Draw all polygons in code-behind for perfect alignment
         private void DrawPolygonsOverlay()
         {
-            if (ImageOverlay == null || Vm?.Document?.Rooms == null || BgImage.Source == null)
+            if (ImageOverlay == null || Vm?.Document?.Rooms == null || BgImage == null || BgImage.Source == null)
                 return;
             ImageOverlay.Children.Clear();
             var bmp = BgImage.Source as System.Windows.Media.Imaging.BitmapSource;
@@ -106,27 +115,41 @@ namespace SVGMapper.Minimal
             Vm.PropertyChanged += (s, ev) => { if (ev.PropertyName == nameof(Vm.Rooms)) DrawPolygonsOverlay(); };
             Vm.Document.Rooms.CollectionChanged += (s, ev) => DrawPolygonsOverlay();
             DrawPolygonsOverlay();
+
+            // no explicit scrollbars to wire (removed per user request)
         }
 
         private void DrawGrid()
         {
-            // Remove previous grid lines and numbers from the image overlay
-            if (ImageOverlay != null)
+            // Use a dedicated GridOverlay so grid can be inverse-scaled without affecting polygon overlay
+            if (GridOverlay != null)
             {
                 var toRemove = new List<UIElement>();
-                foreach (UIElement child in ImageOverlay.Children)
+                foreach (UIElement child in GridOverlay.Children)
                 {
                     if ((child is Line l && l.Tag as string == "GridLine") || (child is TextBlock t && t.Tag as string == "GridNumber")) toRemove.Add(child);
                 }
-                foreach (var el in toRemove) ImageOverlay.Children.Remove(el);
+                foreach (var el in toRemove) GridOverlay.Children.Remove(el);
             }
+
             // if grid is disabled, we're done after removing any previous grid
             if (Vm != null && !Vm.GridVisible) return;
 
-            double width = ImageOverlay != null && ImageOverlay.ActualWidth > 0 ? ImageOverlay.ActualWidth : (MainCanvas.ActualWidth > 0 ? MainCanvas.ActualWidth : MainCanvas.Width);
-            double height = ImageOverlay != null && ImageOverlay.ActualHeight > 0 ? ImageOverlay.ActualHeight : MainCanvas.Height;
+            // If the canvas is zoomed (ScaleTransform), we want the grid to remain a consistent size on screen
+            double scale = 1.0;
+            try { if (MainCanvasScale != null) scale = MainCanvasScale.ScaleX; } catch { scale = 1.0; }
+
+            if (GridOverlay != null)
+            {
+                GridOverlay.RenderTransformOrigin = new System.Windows.Point(0, 0);
+                GridOverlay.RenderTransform = new ScaleTransform(1.0 / (scale <= 0 ? 1.0 : scale), 1.0 / (scale <= 0 ? 1.0 : scale));
+            }
+
+            double width = GridOverlay != null && GridOverlay.ActualWidth > 0 ? GridOverlay.ActualWidth : (MainCanvas.ActualWidth > 0 ? MainCanvas.ActualWidth : MainCanvas.Width);
+            double height = GridOverlay != null && GridOverlay.ActualHeight > 0 ? GridOverlay.ActualHeight : MainCanvas.Height;
             double gridSize = Vm.GridSize;
             if (gridSize < 5) gridSize = 40;
+
             // Vertical lines and numbers
             for (double x = 0; x <= width; x += gridSize)
             {
@@ -140,9 +163,9 @@ namespace SVGMapper.Minimal
                     StrokeThickness = 1,
                     Tag = "GridLine"
                 };
-                if (ImageOverlay != null) ImageOverlay.Children.Add(line);
+                if (GridOverlay != null) GridOverlay.Children.Add(line);
                 else MainCanvas.Children.Add(line);
-                // Add X coordinate number at the top
+
                 var text = new TextBlock
                 {
                     Text = ((int)x).ToString(),
@@ -152,9 +175,10 @@ namespace SVGMapper.Minimal
                 };
                 Canvas.SetLeft(text, x + 2);
                 Canvas.SetTop(text, 2);
-                if (ImageOverlay != null) ImageOverlay.Children.Add(text);
+                if (GridOverlay != null) GridOverlay.Children.Add(text);
                 else MainCanvas.Children.Add(text);
             }
+
             // Horizontal lines and numbers
             for (double y = 0; y <= height; y += gridSize)
             {
@@ -168,9 +192,9 @@ namespace SVGMapper.Minimal
                     StrokeThickness = 1,
                     Tag = "GridLine"
                 };
-                if (ImageOverlay != null) ImageOverlay.Children.Add(line);
+                if (GridOverlay != null) GridOverlay.Children.Add(line);
                 else MainCanvas.Children.Add(line);
-                // Add Y coordinate number at the left
+
                 var text = new TextBlock
                 {
                     Text = ((int)y).ToString(),
@@ -180,7 +204,7 @@ namespace SVGMapper.Minimal
                 };
                 Canvas.SetLeft(text, 2);
                 Canvas.SetTop(text, y + 2);
-                if (ImageOverlay != null) ImageOverlay.Children.Add(text);
+                if (GridOverlay != null) GridOverlay.Children.Add(text);
                 else MainCanvas.Children.Add(text);
             }
         }
@@ -303,7 +327,7 @@ namespace SVGMapper.Minimal
                 p = GetCanvasPoint(e);
             }
             // Convert UI/canvas point to image pixel coordinates
-            if (BgImage.Source is System.Windows.Media.Imaging.BitmapSource bmp && BgImage.ActualWidth > 0 && BgImage.ActualHeight > 0)
+            if (BgImage != null && BgImage.Source is System.Windows.Media.Imaging.BitmapSource bmp && BgImage.ActualWidth > 0 && BgImage.ActualHeight > 0)
             {
                 var imgPxSize = new System.Windows.Size(bmp.PixelWidth, bmp.PixelHeight);
                 var controlSize = new System.Windows.Size(BgImage.ActualWidth, BgImage.ActualHeight);
@@ -472,6 +496,86 @@ namespace SVGMapper.Minimal
 
             return p;
         }
+
+        private void MainScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            // Ctrl+Wheel -> zoom; otherwise let ScrollViewer perform normal scrolling
+            if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+            {
+                e.Handled = true;
+                double zoomFactor = e.Delta > 0 ? ZoomStep : 1.0 / ZoomStep;
+                var prev = MainCanvasScale?.ScaleX ?? 1.0;
+                var target = Math.Max(ZoomMin, Math.Min(ZoomMax, prev * zoomFactor));
+
+                // determine logical mouse position on the canvas (pre-transform)
+                var mousePosOnViewer = e.GetPosition(MainScrollViewer);
+                var mousePosOnCanvas = e.GetPosition(MainCanvas);
+                var transform = MainCanvas.RenderTransform;
+                System.Windows.Point logicalPos = mousePosOnCanvas;
+                if (transform != null && !transform.Value.IsIdentity)
+                {
+                    try { var inv = transform.Inverse; logicalPos = inv.Transform(mousePosOnCanvas); } catch { }
+                }
+
+                // apply scale
+                MainCanvasScale.ScaleX = target;
+                MainCanvasScale.ScaleY = target;
+
+                // compute new scroll offsets to keep the logical point under the cursor
+                double newOffsetX = logicalPos.X * target - mousePosOnViewer.X;
+                double newOffsetY = logicalPos.Y * target - mousePosOnViewer.Y;
+                if (newOffsetX < 0) newOffsetX = 0;
+                if (newOffsetY < 0) newOffsetY = 0;
+                try { MainScrollViewer.ScrollToHorizontalOffset(newOffsetX); MainScrollViewer.ScrollToVerticalOffset(newOffsetY); } catch { }
+                // refresh grid overlay so inverse transform is applied
+                DrawGrid();
+            }
+            else
+            {
+                // allow default scrolling behavior
+            }
+        }
+
+        private void MainScrollViewer_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.MiddleButton == MouseButtonState.Pressed)
+            {
+                _isPanning = true;
+                _panStart = e.GetPosition(MainScrollViewer);
+                _panStartOffsetX = MainScrollViewer.HorizontalOffset;
+                _panStartOffsetY = MainScrollViewer.VerticalOffset;
+                MainScrollViewer.CaptureMouse();
+                e.Handled = true;
+            }
+        }
+
+        private void MainScrollViewer_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (_isPanning && e.MiddleButton == MouseButtonState.Pressed)
+            {
+                var pos = e.GetPosition(MainScrollViewer);
+                var dx = pos.X - _panStart.X;
+                var dy = pos.Y - _panStart.Y;
+                var newX = _panStartOffsetX - dx;
+                var newY = _panStartOffsetY - dy;
+                if (newX < 0) newX = 0;
+                if (newY < 0) newY = 0;
+                try { MainScrollViewer.ScrollToHorizontalOffset(newX); MainScrollViewer.ScrollToVerticalOffset(newY); } catch { }
+                e.Handled = true;
+            }
+        }
+
+        private void MainScrollViewer_PreviewMouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (_isPanning && e.ChangedButton == MouseButton.Middle)
+            {
+                _isPanning = false;
+                try { MainScrollViewer.ReleaseMouseCapture(); } catch { }
+                e.Handled = true;
+            }
+        }
+
+        // explicit scrollbar helpers removed
 
         private void CleanupDraftPreview()
         {
@@ -741,13 +845,13 @@ namespace SVGMapper.Minimal
             var bmp = BgImage?.Source as System.Windows.Media.Imaging.BitmapSource;
             EnsurePointsFromNormalized(room, bmp);
             if ((room.Points == null || room.Points.Count == 0) && (room.NormalizedPoints == null || room.NormalizedPoints.Count == 0)) return;
-            if (bmp == null) return;
+            if (bmp == null || BgImage == null) return;
 
             var imgPxSize = new System.Windows.Size(bmp.PixelWidth, bmp.PixelHeight);
             var controlSize = new System.Windows.Size(BgImage.ActualWidth, BgImage.ActualHeight);
             var ptsForHandles = room.NormalizedPoints != null && room.NormalizedPoints.Count > 0
                 ? room.NormalizedPoints.Select(n => new System.Windows.Point(n.X * imgPxSize.Width, n.Y * imgPxSize.Height)).ToList()
-                : room.Points.Select(p => new System.Windows.Point(p.X, p.Y)).ToList();
+                : (room.Points ?? System.Linq.Enumerable.Empty<Models.PointModel>()).Select(p => new System.Windows.Point(p.X, p.Y)).ToList();
             for (int i = 0; i < ptsForHandles.Count; i++)
             {
                 var pt = ptsForHandles[i];

@@ -98,18 +98,7 @@ namespace SVGMapper.Minimal.Services
                 }
             }
 
-            // Export grid lines and numbers for visual comparison
-            double gridSizeSvg = 40; // matches default UI grid size
-            for (double x = 0; x <= vbW; x += gridSizeSvg)
-            {
-                sb.AppendLine($"<line x1='{x.ToString(CultureInfo.InvariantCulture)}' y1='0' x2='{x.ToString(CultureInfo.InvariantCulture)}' y2='{vbH.ToString(CultureInfo.InvariantCulture)}' stroke='lightgray' stroke-width='1' />");
-                sb.AppendLine($"<text x='{(x + 2).ToString(CultureInfo.InvariantCulture)}' y='12' font-size='10' fill='gray'>{(int)x}</text>");
-            }
-            for (double y = 0; y <= vbH; y += gridSizeSvg)
-            {
-                sb.AppendLine($"<line x1='0' y1='{y.ToString(CultureInfo.InvariantCulture)}' x2='{vbW.ToString(CultureInfo.InvariantCulture)}' y2='{y.ToString(CultureInfo.InvariantCulture)}' stroke='lightgray' stroke-width='1' />");
-                sb.AppendLine($"<text x='2' y='{(y + 12).ToString(CultureInfo.InvariantCulture)}' font-size='10' fill='gray'>{(int)y}</text>");
-            }
+            // Grid is omitted from exported SVG (UI-only overlay)
 
             // polygons
             int idx = 1;

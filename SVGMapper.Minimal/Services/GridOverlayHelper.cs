@@ -8,13 +8,14 @@ using System.Windows.Media.Imaging;
 
 namespace SVGMapper.Minimal.Services
 {
+#nullable disable
     public static class GridOverlayHelper
     {
         public static void SetupImageAndGrid(
             Image imageControl,
             Canvas overlayCanvas,
             int gridPx,
-            Brush stroke = null,
+            Brush? stroke = null,
             double strokeThickness = 1.0)
         {
             if (imageControl?.Source is not BitmapSource bmp) return;

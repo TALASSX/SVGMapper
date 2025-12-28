@@ -57,20 +57,27 @@
         </StackPanel>
 
         <Border Grid.Column="1" Background="#FFF" BorderBrush="#DDD" BorderThickness="1" Margin="6">
-            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <ScrollViewer x:Name="MainScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" CanContentScroll="False"
+                          PreviewMouseWheel="MainScrollViewer_PreviewMouseWheel"
+                          PreviewMouseDown="MainScrollViewer_PreviewMouseDown"
+                          PreviewMouseMove="MainScrollViewer_PreviewMouseMove"
+                          PreviewMouseUp="MainScrollViewer_PreviewMouseUp">
                 <Canvas x:Name="MainCanvas" Background="White" Width="{Binding CanvasWidth}" Height="{Binding CanvasHeight}"
                         MouseLeftButtonDown="Canvas_MouseLeftButtonDown"
                         MouseMove="Canvas_MouseMove"
                         MouseLeftButtonUp="Canvas_MouseLeftButtonUp">
+                    <Canvas.RenderTransform>
+                        <ScaleTransform x:Name="MainCanvasScale" ScaleX="1" ScaleY="1" />
+                    </Canvas.RenderTransform>
                     <!-- Parent Grid that holds the Image and the pixel-sized overlay Canvas -->
                     <Grid Canvas.Left="0" Canvas.Top="0" Width="{Binding CanvasWidth}" Height="{Binding CanvasHeight}">
                         <Image x:Name="BgImage" Source="{Binding BackgroundImageSource}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        <Canvas x:Name="ImageOverlay" Width="{Binding ActualWidth, ElementName=BgImage}" Height="{Binding ActualHeight, ElementName=BgImage}" IsHitTestVisible="False" />
+                        <Canvas x:Name="ImageOverlay" Width="{Binding ActualWidth, ElementName=BgImage}" Height="{Binding ActualHeight, ElementName=BgImage}" IsHitTestVisible="False" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <Canvas x:Name="GridOverlay" Width="{Binding ActualWidth, ElementName=BgImage}" Height="{Binding ActualHeight, ElementName=BgImage}" IsHitTestVisible="False" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Grid>
 
                     <!-- programmatic grid rendered by code-behind -->
                     <!-- Remove ItemsControl for Rooms: polygons will be drawn in code-behind for perfect alignment -->
-
 
                 </Canvas>
             </ScrollViewer>

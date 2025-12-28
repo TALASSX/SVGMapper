@@ -229,30 +229,127 @@ namespace SVGMapper.Minimal.Controls
                 var before = originalRoomPoints.Select(pt => new System.Windows.Point(pt.X, pt.Y)).ToList();
                 var after = new List<System.Windows.Point>();
 
-                foreach (var pt in before)
+                // Map original image-pixel points through the UI transform, apply the UI translation/scale
+                // (based on overlay control movement/resizing), then inverse-map back to image pixels.
+                var wnd = Window.GetWindow(this) as MainWindow;
+                var vm = wnd?.DataContext as MainViewModel;
+                System.Windows.Size imgPxSize = new(1, 1);
+                System.Windows.Size controlSize = new(1, 1);
+                double dpiX = 1.0, dpiY = 1.0;
+
+                // Prefer actual BgImage control size and bitmap DPI when available
+                var bgImage = wnd?.FindName("BgImage") as System.Windows.Controls.Image;
+                var mainCanvas = wnd?.FindName("MainCanvas") as System.Windows.Controls.Canvas;
+                var bmp = bgImage?.Source as System.Windows.Media.Imaging.BitmapSource;
+                if (bmp != null && bgImage != null)
                 {
-                    double relX = oldRect.Width != 0 ? (pt.X - oldRect.X) / oldRect.Width : 0.0;
-                    double relY = oldRect.Height != 0 ? (pt.Y - oldRect.Y) / oldRect.Height : 0.0;
-                    double nx = newRect.X + relX * newRect.Width;
-                    double ny = newRect.Y + relY * newRect.Height;
-                    after.Add(new System.Windows.Point(nx, ny));
+                    imgPxSize = new System.Windows.Size(bmp.PixelWidth, bmp.PixelHeight);
+                    // If the background image fills the canvas, prefer using the MainCanvas size
+                    // to avoid letterbox/offset math. Otherwise use the BgImage display size.
+                    if (mainCanvas != null && Math.Abs(bgImage.ActualWidth - mainCanvas.ActualWidth) < 1.0 && Math.Abs(bgImage.ActualHeight - mainCanvas.ActualHeight) < 1.0)
+                    {
+                        controlSize = new System.Windows.Size(mainCanvas.ActualWidth, mainCanvas.ActualHeight);
+                    }
+                    else if (bgImage.ActualWidth > 0 && bgImage.ActualHeight > 0)
+                    {
+                        controlSize = new System.Windows.Size(bgImage.ActualWidth, bgImage.ActualHeight);
+                    }
+                    else if (mainCanvas != null)
+                    {
+                        controlSize = new System.Windows.Size(mainCanvas.ActualWidth, mainCanvas.ActualHeight);
+                    }
+                    else
+                    {
+                        controlSize = new System.Windows.Size(bgImage.ActualWidth, bgImage.ActualHeight);
+                    }
+                    dpiX = bmp.DpiX > 0 ? bmp.DpiX / 96.0 : 1.0;
+                    dpiY = bmp.DpiY > 0 ? bmp.DpiY / 96.0 : 1.0;
+                }
+                else if (vm?.Document != null && vm.Document.BackgroundImageWidth > 0 && vm.Document.BackgroundImageHeight > 0)
+                {
+                    imgPxSize = new System.Windows.Size(vm.Document.BackgroundImageWidth, vm.Document.BackgroundImageHeight);
+                    // fallback: if no UI size known, use image pixel size as DIP control size (best-effort)
+                    controlSize = imgPxSize;
+                    dpiX = vm.Document.BackgroundDpiScaleX > 0 ? vm.Document.BackgroundDpiScaleX : 1.0;
+                    dpiY = vm.Document.BackgroundDpiScaleY > 0 ? vm.Document.BackgroundDpiScaleY : 1.0;
+                }
+
+                var t = SVGMapper.Minimal.Services.ImageCoordinateTransformer.CalculateTransform(imgPxSize, controlSize, dpiX, dpiY, SVGMapper.Minimal.Services.ImageCoordinateTransformer.StretchMode.Uniform);
+
+                // For each original image pixel point: map -> UI (relative to BgImage),
+                // convert to MainCanvas coords so it's in same space as overlay bounds,
+                // apply bounding-box transform (scale+translate), convert back to BgImage coords,
+                // then invert UI->image pixels.
+                // mainCanvas already obtained above
+                var bgImageCtrl = bgImage;
+                foreach (var imgPt in before)
+                {
+                    // 1) image pixels -> UI (DIPs relative to BgImage)
+                    var uiPt = SVGMapper.Minimal.Services.ImageCoordinateTransformer.TransformPoint(
+                        new System.Windows.Point(imgPt.X, imgPt.Y), imgPxSize, controlSize, dpiX, dpiY,
+                        SVGMapper.Minimal.Services.ImageCoordinateTransformer.StretchMode.Uniform);
+
+                    // 2) UI point relative to MainCanvas (absolute on canvas)
+                    System.Windows.Point uiAbs = uiPt;
+                    if (bgImageCtrl != null && mainCanvas != null)
+                    {
+                        uiAbs = bgImageCtrl.TranslatePoint(uiPt, mainCanvas);
+                    }
+
+                    // 3) compute local position relative to oldRect (both in MainCanvas coords)
+                    var localX = uiAbs.X - oldRect.X;
+                    var localY = uiAbs.Y - oldRect.Y;
+                    var newLocalX = localX * sx;
+                    var newLocalY = localY * sy;
+                    var newUiAbsX = newRect.X + newLocalX;
+                    var newUiAbsY = newRect.Y + newLocalY;
+
+                    // 4) convert new absolute UI point back to BgImage-relative point
+                    System.Windows.Point newUiRelativeToBg = new System.Windows.Point(newUiAbsX, newUiAbsY);
+                    if (bgImageCtrl != null && mainCanvas != null)
+                    {
+                        newUiRelativeToBg = mainCanvas.TranslatePoint(new System.Windows.Point(newUiAbsX, newUiAbsY), bgImageCtrl);
+                    }
+
+                    // 5) invert UI -> image pixels using the transform 't'
+                    double xInImageDip = (newUiRelativeToBg.X - t.OffsetX) / t.ScaleX;
+                    double yInImageDip = (newUiRelativeToBg.Y - t.OffsetY) / t.ScaleY;
+                    double newPx = xInImageDip * dpiX;
+                    double newPy = yInImageDip * dpiY;
+
+                    // Clamp to image bounds
+                    newPx = Math.Max(0, Math.Min(imgPxSize.Width - 1, newPx));
+                    newPy = Math.Max(0, Math.Min(imgPxSize.Height - 1, newPy));
+
+                    after.Add(new System.Windows.Point(newPx, newPy));
                 }
 
                 // apply via UndoRedo service on the main VM so changes are undoable
-                var wnd = Window.GetWindow(this);
-                if (wnd?.DataContext is MainViewModel vm)
+                if (vm != null)
                 {
+                    // Prepare normalized lists for undo/redo
+                    var beforeNorm = new List<Models.PointModel>();
+                    var afterNorm = new List<Models.PointModel>();
+                    double imgW = imgPxSize.Width, imgH = imgPxSize.Height;
+                    foreach (var p in before) beforeNorm.Add(new Models.PointModel { X = imgW > 0 ? p.X / imgW : 0, Y = imgH > 0 ? p.Y / imgH : 0 });
+                    foreach (var p in after) afterNorm.Add(new Models.PointModel { X = imgW > 0 ? p.X / imgW : 0, Y = imgH > 0 ? p.Y / imgH : 0 });
+
                     vm.UndoRedo.Execute(
                         doAction: () =>
                         {
-                            // set new points
+                            // set new points (pixel coords)
                             Room.Points.Clear();
                             foreach (var p in after) Room.Points.Add(new Models.PointModel { X = p.X, Y = p.Y });
+                            // set normalized points
+                            Room.NormalizedPoints.Clear();
+                            foreach (var np in afterNorm) Room.NormalizedPoints.Add(np);
                         },
                         undoAction: () =>
                         {
                             Room.Points.Clear();
                             foreach (var p in before) Room.Points.Add(new Models.PointModel { X = p.X, Y = p.Y });
+                            Room.NormalizedPoints.Clear();
+                            foreach (var np in beforeNorm) Room.NormalizedPoints.Add(np);
                         }
                     );
                 }

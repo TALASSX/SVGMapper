@@ -43,12 +43,26 @@ namespace SVGMapper.Minimal.ViewModels
         public int CurrentDraftCount => _currentDraft?.Points.Count ?? 0;
 
         private PolygonRoom? _selectedRoom;
-        public PolygonRoom? SelectedRoom { get => _selectedRoom; set { if (_selectedRoom != null) _selectedRoom.IsSelected = false; _selectedRoom = value; if (_selectedRoom != null) _selectedRoom.IsSelected = true; OnPropertyChanged(); } }
+        public PolygonRoom? SelectedRoom
+        {
+            get => _selectedRoom;
+            set
+            {
+                if (_selectedRoom != null) _selectedRoom.IsSelected = false;
+                _selectedRoom = value;
+                if (_selectedRoom != null) _selectedRoom.IsSelected = true;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(SelectedRoomNumber));
+            }
+        }
+
+        public int SelectedRoomNumber => SelectedRoom != null ? (Rooms.IndexOf(SelectedRoom) + 1) : 0;
 
         public MainViewModel()
         {
             Document.Rooms = Rooms;
             Document.Seats = Seats;
+            Rooms.CollectionChanged += (s, e) => OnPropertyChanged(nameof(SelectedRoomNumber));
         }
 
         public ICommand SelectToolCommand => new RelayCommand(_ => { IsPolygonTool = false; IsSeatTool = false; });
@@ -119,6 +133,15 @@ namespace SVGMapper.Minimal.ViewModels
             if (_currentDraft.Points.Count < 3) { _currentDraft = null; return; }
             if (!string.IsNullOrWhiteSpace(name)) _currentDraft.Name = name!;
             var draft = _currentDraft;
+            // compute normalized points based on document image size (store fractions)
+            if (Document != null && Document.BackgroundImageWidth > 0 && Document.BackgroundImageHeight > 0)
+            {
+                draft.NormalizedPoints.Clear();
+                foreach (var p in draft.Points)
+                {
+                    draft.NormalizedPoints.Add(new PointModel { X = p.X / Document.BackgroundImageWidth, Y = p.Y / Document.BackgroundImageHeight });
+                }
+            }
             UndoRedo.Execute(() => Rooms.Add(draft), () => Rooms.Remove(draft));
             _currentDraft = null;
         }

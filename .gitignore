@@ -39,3 +39,15 @@ SVGMapper.Original_Backup/
 
 # OneDrive temporary files
 ~$*
+
+# Node / JS
+**/node_modules/
+node_modules/
+package-lock.json
+
+# Distribution / build outputs
+dist/
+build/
+
+# Exported artifacts
+export.svg

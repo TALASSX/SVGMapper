@@ -54,8 +54,11 @@ jobs:
       - name: Create MSIX package
         shell: pwsh
         run: |
-          Write-Output "Locating MakeAppx.exe..."
-          $makeappx = (Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin' -Recurse -Filter MakeAppx.exe -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
+          Write-Output "Locating MakeAppx.exe (prefer x64)..."
+          $makeappxList = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin' -Recurse -Filter MakeAppx.exe -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
+          $makeappx = $makeappxList | Where-Object { $_ -match '\\x64\\' } | Select-Object -First 1
+          if (-not $makeappx) { $makeappx = $makeappxList | Where-Object { $_ -match '\\x86\\' } | Select-Object -First 1 }
+          if (-not $makeappx) { $makeappx = $makeappxList | Select-Object -First 1 }
           if (-not $makeappx) { Write-Error "MakeAppx.exe not found. Ensure Windows SDK is installed."; exit 1 }
           # Use runner temp for staging to avoid copying artifacts into itself
           $staging = Join-Path $env:RUNNER_TEMP 'msix_staging'
@@ -65,7 +68,7 @@ jobs:
           Copy-Item "$PWD\artifacts\*" -Destination $staging -Recurse -Force
           Copy-Item "$PWD\installer\AppxManifest.xml" -Destination "$staging\AppxManifest.xml" -Force
           Write-Output "Packing MSIX to artifacts/SVGMapper.msix"
-          & $makeappx pack /d $staging /p "$PWD\artifacts\SVGMapper.msix"
+          & "$makeappx" pack /d $staging /p "$PWD\artifacts\SVGMapper.msix"
           Write-Output "MSIX created at: $PWD\artifacts\SVGMapper.msix"
 
       - name: Install WiX toolset

@@ -21,6 +21,15 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1
 
+      - name: Restore NuGet packages
+        shell: pwsh
+        run: |
+          if (Test-Path SVGMapper.Minimal.sln) {
+            nuget restore SVGMapper.Minimal.sln
+          } else {
+            nuget restore SVGMapper.Minimal/SVGMapper.Minimal.csproj
+          }
+
       - name: Build solution (Release)
         shell: pwsh
         run: |

@@ -37,6 +37,13 @@ SVGMapper.Original_Backup/
 *.dll
 *.pdb
 
+# Keep release binaries in repo (allow these explicitly)
+!/release/
+!/release/*
+!/release/*.exe
+!/release/*.dll
+!/release/*.pdb
+
 # OneDrive temporary files
 ~$*
 

@@ -13,3 +13,14 @@ $relWixobj = Join-Path $art "ReleaseFiles.wixobj"
 & candle.exe -out $relWixobj $releaseWxs -dReleaseDir="$ReleaseDir"
 & light.exe -sval -ext WixUIExtension -out (Join-Path $art "SVGMapper.Installer.msi") $prodWixobj $relWixobj
 Write-Output "MSI created at: $(Join-Path $art 'SVGMapper.Installer.msi')"
+
+# Build burn bundle (EXE bootstrapper)
+$bundleWxs = Join-Path $repoRoot "installer\Bundle.wxs"
+if (Test-Path $bundleWxs) {
+  $bundleWixobj = Join-Path $art "Bundle.wixobj"
+  & candle.exe -out $bundleWixobj -ext WixBalExtension $bundleWxs -dMsiPath="$(Join-Path $art 'SVGMapper.Installer.msi')"
+  & light.exe -sval -ext WixBalExtension -out (Join-Path $art "SVGMapper.Installer.exe") $bundleWixobj
+  Write-Output "EXE bootstrapper created at: $(Join-Path $art 'SVGMapper.Installer.exe')"
+} else {
+  Write-Output "No Bundle.wxs found; skipping EXE bootstrapper creation"
+}

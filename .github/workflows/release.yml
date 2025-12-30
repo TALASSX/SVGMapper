@@ -90,6 +90,7 @@ jobs:
           files: |
             artifacts/SVGMapper.Minimal.portable.zip
             artifacts/SVGMapper.Installer.msi
+            artifacts/SVGMapper.Installer.exe
             release/SVGMapper.Minimal.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

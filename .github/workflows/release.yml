@@ -67,6 +67,8 @@ jobs:
           New-Item -ItemType Directory -Path $staging -Force | Out-Null
           Copy-Item "$PWD\artifacts\*" -Destination $staging -Recurse -Force
           Copy-Item "$PWD\installer\AppxManifest.xml" -Destination "$staging\AppxManifest.xml" -Force
+          # Copy installer assets (icons, logos) into staging so manifest references resolve
+          if (Test-Path "$PWD\installer\Assets") { Copy-Item "$PWD\installer\Assets" -Destination "$staging\Assets" -Recurse -Force }
           Write-Output "Packing MSIX to artifacts/SVGMapper.msix"
           & "$makeappx" pack /d $staging /p "$PWD\artifacts\SVGMapper.msix"
           Write-Output "MSIX created at: $PWD\artifacts\SVGMapper.msix"

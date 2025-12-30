@@ -51,28 +51,8 @@ jobs:
           Compress-Archive -Path "$PWD\artifacts\*" -DestinationPath $zip -Force
           Write-Output "ZIP created at: $zip"
 
-      - name: Create MSIX package
-        shell: pwsh
-        continue-on-error: true
-        run: |
-          Write-Output "Locating MakeAppx.exe (prefer x64)..."
-          $makeappxList = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin' -Recurse -Filter MakeAppx.exe -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
-          $makeappx = $makeappxList | Where-Object { $_ -match '\\x64\\' } | Select-Object -First 1
-          if (-not $makeappx) { $makeappx = $makeappxList | Where-Object { $_ -match '\\x86\\' } | Select-Object -First 1 }
-          if (-not $makeappx) { $makeappx = $makeappxList | Select-Object -First 1 }
-          if (-not $makeappx) { Write-Error "MakeAppx.exe not found. Ensure Windows SDK is installed."; exit 1 }
-          # Use runner temp for staging to avoid copying artifacts into itself
-          $staging = Join-Path $env:RUNNER_TEMP 'msix_staging'
-          if (Test-Path "$PWD\artifacts\msix_staging") { Remove-Item "$PWD\artifacts\msix_staging" -Recurse -Force }
-          if (Test-Path $staging) { Remove-Item $staging -Recurse -Force }
-          New-Item -ItemType Directory -Path $staging -Force | Out-Null
-          Copy-Item "$PWD\artifacts\*" -Destination $staging -Recurse -Force
-          Copy-Item "$PWD\installer\AppxManifest.xml" -Destination "$staging\AppxManifest.xml" -Force
-          # Copy installer assets (icons, logos) into staging so manifest references resolve
-          if (Test-Path "$PWD\installer\Assets") { Copy-Item "$PWD\installer\Assets" -Destination "$staging\Assets" -Recurse -Force }
-          Write-Output "Packing MSIX to artifacts/SVGMapper.msix"
-          & "$makeappx" pack /d $staging /p "$PWD\artifacts\SVGMapper.msix" || Write-Output "MakeAppx failed; continuing without MSIX"
-          Write-Output "MSIX creation step finished (may have failed but job will continue)"
+      # MSIX packaging removed from CI: produce MSIX manually or using Visual Studio / MSIX Packaging Tool to ensure manifest validity and signing.
+      # See README.md > Packaging for manual MSIX instructions.
 
       - name: Install WiX toolset
         shell: pwsh
@@ -110,7 +90,6 @@ jobs:
           files: |
             artifacts/SVGMapper.Minimal.portable.zip
             artifacts/SVGMapper.Installer.msi
-            artifacts/SVGMapper.msix
             release/SVGMapper.Minimal.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

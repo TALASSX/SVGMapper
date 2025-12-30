@@ -36,6 +36,13 @@ Trust verification for MSI
   - Upload to VirusTotal for additional checks.
 - See `RELEASE_VERIFICATION_v1.0.7.md` for full verification details.
 
+Packaging (MSIX)
+- MSIX packaging and validation are not performed in CI to avoid build failures due to strict manifest rules.
+- To produce an MSIX manually (recommended):
+  - Use Visual Studio: create a MSIX Packaging Project and add `installer\AppxManifest.xml` and your app files; build and sign the package.
+  - Or use the MSIX Packaging Tool (Microsoft Store) to convert the MSI to MSIX, then sign the output.
+  - Signing: use a code-signing certificate (PFX) or a test cert for local distribution. Use `signtool sign /fd SHA256 /f yourcert.pfx /p password /t http://timestamp.digicert.com path\to\SVGMapper.msix`.
+
 Build from source
 - Open `SVGMapper.Minimal.sln` or the project in Visual Studio (Windows) and build.
 - Target: .NET (WPF). Ensure the appropriate .NET Desktop Runtime is installed.

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+         xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+         xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+         xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+         IgnorableNamespaces="uap rescap desktop">
+  <Identity Name="TALASSX.SVGMapper" Publisher="CN=Sai Teja Talasila" Version="1.0.0.0" />
+  <Properties>
+    <DisplayName>SVGMapper</DisplayName>
+    <PublisherDisplayName>Sai Teja Talasila</PublisherDisplayName>
+    <Description>SVGMapper floor plan tool</Description>
+  </Properties>
+  <Applications>
+    <Application Id="SVGMapper" Executable="SVGMapper.Minimal.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements DisplayName="SVGMapper" Description="SVGMapper floor plan tool" BackgroundColor="#FFFFFF" />
+    </Application>
+  </Applications>
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust"/>
+  </Capabilities>
+  <Extensions>
+    <desktop:Extension Category="windows.fullTrustProcess" EntryPoint="Windows.FullTrustApplication" />
+  </Extensions>
+</Package>

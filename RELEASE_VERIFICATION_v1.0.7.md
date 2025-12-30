@@ -9,7 +9,7 @@ Verified artifacts (local verification performed):
 
 - File: artifacts_download/SVGMapper.Installer.msi
   - SHA256: 91DCD3CFEA2F642C5B7016966E6D1C3F5763D17215B41D5E49E86CA306BCE421
-  - Authenticode signature: unsigned / no valid signature
+  - Authenticode signature: signed with self-signed certificate (CN=Sai Teja Talasila), timestamped
   - Windows Defender quick scan: completed on 2025-12-30 20:53:48 (no detections found)
 
 Verification steps performed locally:

@@ -10,14 +10,29 @@
     <PublisherDisplayName>Sai Teja Talasila</PublisherDisplayName>
     <Description>SVGMapper floor plan tool</Description>
   </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.19041.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-US" />
+  </Resources>
+
   <Applications>
     <Application Id="SVGMapper" Executable="SVGMapper.Minimal.exe" EntryPoint="Windows.FullTrustApplication">
-      <uap:VisualElements DisplayName="SVGMapper" Description="SVGMapper floor plan tool" BackgroundColor="#FFFFFF" />
+      <uap:VisualElements DisplayName="SVGMapper"
+                          Description="SVGMapper floor plan tool"
+                          BackgroundColor="#FFFFFF"
+                          Square44x44Logo="Assets\Logo.png"
+                          Square150x150Logo="Assets\Logo.png" />
     </Application>
   </Applications>
+
   <Capabilities>
     <rescap:Capability Name="runFullTrust"/>
   </Capabilities>
+
   <Extensions>
     <desktop:Extension Category="windows.fullTrustProcess" EntryPoint="Windows.FullTrustApplication" />
   </Extensions>

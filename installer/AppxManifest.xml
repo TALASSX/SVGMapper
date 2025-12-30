@@ -35,6 +35,8 @@
   </Capabilities>
 
   <Extensions>
-    <desktop:Extension Category="windows.fullTrustProcess" EntryPoint="Windows.FullTrustApplication" />
+    <Extension Category="windows.fullTrustProcess" EntryPoint="Windows.FullTrustApplication">
+      <desktop:FullTrustProcess />
+    </Extension>
   </Extensions>
 </Package>

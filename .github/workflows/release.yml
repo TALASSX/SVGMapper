@@ -91,7 +91,8 @@ jobs:
           $releaseWxs = "$art\ReleaseFiles.wxs"
           $prodWixobj = "$art\Product.wixobj"
           $relWixobj = "$art\ReleaseFiles.wixobj"
-          & candle.exe $productWxs $releaseWxs -dReleaseDir="$ReleaseDir" -out $prodWixobj
+          & candle.exe $productWxs -dReleaseDir="$ReleaseDir" -out $art
+          & candle.exe $releaseWxs -dReleaseDir="$ReleaseDir" -out $art
           & light.exe -sval -ext WixUIExtension -out "$art\SVGMapper.Installer.msi" $prodWixobj $relWixobj
           Write-Output "MSI created at: $art\SVGMapper.Installer.msi"
 

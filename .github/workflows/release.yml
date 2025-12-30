@@ -42,18 +42,16 @@ jobs:
       - name: Prepare artifacts directory
         shell: pwsh
         run: |
-          $art = "$PWD\artifacts"
-          if (-not (Test-Path $art)) { New-Item -ItemType Directory -Path $art | Out-Null }
-          $productWxs = "$PWD\installer\Product.wxs"
-          $releaseWxs = "$art\ReleaseFiles.wxs"
-          $prodWixobj = "$art\Product.wixobj"
-          $relWixobj = "$art\ReleaseFiles.wixobj"
-          & candle.exe -out $prodWixobj $productWxs -dReleaseDir="$ReleaseDir"
-          & candle.exe -out $relWixobj $releaseWxs -dReleaseDir="$ReleaseDir"
-          & light.exe -sval -ext WixUIExtension -out "$art\SVGMapper.Installer.msi" $prodWixobj $relWixobj
+          $out = "$PWD\artifacts"
+          if (Test-Path $out) { Remove-Item $out -Recurse -Force }
+          New-Item -ItemType Directory -Path $out | Out-Null
+          # Prefer existing release/ folder (packaged output), else copy compiled output
+          if (Test-Path "$PWD\release") {
+            Copy-Item -Path "$PWD\release\*" -Destination $out -Recurse -Force
+          } else {
             $candidates = Get-ChildItem -Path $PWD -Recurse -Filter "SVGMapper.Minimal.exe" -ErrorAction SilentlyContinue
             if ($candidates) {
-              foreach($c in $candidates){ Copy-Item -Path $c.DirectoryName\* -Destination $out -Recurse -Force }
+              foreach($c in $candidates){ Copy-Item -Path (Join-Path $c.DirectoryName '*') -Destination $out -Recurse -Force }
             } else {
               Write-Output "No compiled EXE found; ensure the project builds or add outputs to /release."
             }

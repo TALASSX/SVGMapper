@@ -23,6 +23,11 @@ Installation (via MSI installer)
 msiexec /i "path\to\SVGMapper.Installer.msi"
 ```
 
+**Recommended: Portable ZIP (no warnings)**
+- Download `SVGMapper.Minimal.portable.zip` from [GitHub Releases](https://github.com/TALASSX/SVGMapper/releases).
+- Extract the ZIP.
+- Run `SVGMapper.Minimal.exe` directly (no installation needed).
+
 Trust verification for MSI
 - The MSI is unsigned, so verify before installing:
   - Compute SHA256: `Get-FileHash "path\to\SVGMapper.Installer.msi" -Algorithm SHA256`

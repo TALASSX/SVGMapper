@@ -57,6 +57,35 @@ jobs:
           Compress-Archive -Path "$PWD\artifacts\*" -DestinationPath $zip -Force
           Write-Output "ZIP created at: $zip"
 
+      - name: Install WiX toolset
+        shell: pwsh
+        run: |
+          choco install wixtoolset -y --no-progress
+          Write-Output "WiX installed"
+
+      - name: Harvest release folder with heat.exe
+        shell: pwsh
+        run: |
+          $ReleaseDir = "$PWD\release"
+          $outWxs = "$PWD\artifacts\ReleaseFiles.wxs"
+          if (-not (Test-Path $ReleaseDir)) { Write-Output "No release folder found; skipping heat"; exit 0 }
+          & heat dir "$ReleaseDir" -ag -sfrag -scom -ke -cg ReleaseFiles -dr INSTALLFOLDER -var var.ReleaseDir -out $outWxs
+          Write-Output "Harvested $ReleaseDir -> $outWxs"
+
+      - name: Build MSI with WiX (candle & light)
+        shell: pwsh
+        run: |
+          $ReleaseDir = "$PWD\release"
+          if (-not (Test-Path $ReleaseDir)) { Write-Output "No release folder found; skipping MSI build"; exit 0 }
+          $art = "$PWD\artifacts"
+          $productWxs = "$PWD\installer\Product.wxs"
+          $releaseWxs = "$art\ReleaseFiles.wxs"
+          $prodWixobj = "$art\Product.wixobj"
+          $relWixobj = "$art\ReleaseFiles.wixobj"
+          & candle.exe $productWxs $releaseWxs -dReleaseDir="$ReleaseDir" -out $prodWixobj
+          & light.exe -sval -ext WixUIExtension -out "$art\SVGMapper.Installer.msi" $prodWixobj $relWixobj
+          Write-Output "MSI created at: $art\SVGMapper.Installer.msi"
+
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
@@ -86,3 +115,12 @@ jobs:
           asset_path: release/SVGMapper.Minimal.zip
           asset_name: SVGMapper.Minimal.zip
           asset_content_type: application/zip
+
+      - name: Upload MSI installer (if created)
+        if: always()
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/SVGMapper.Installer.msi
+          asset_name: SVGMapper.Installer.msi
+          asset_content_type: application/octet-stream

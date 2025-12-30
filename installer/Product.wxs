@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="SVGMapper" Language="1033" Version="1.0.0.0" Manufacturer="SVGMapper" UpgradeCode="01234567-89AB-CDEF-0123-456789ABCDEF">
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine"/>
+    <MediaTemplate/>
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="SVGMapper"/>
+      </Directory>
+    </Directory>
+
+    <Feature Id="MainFeature" Title="SVGMapper" Level="1">
+      <ComponentGroupRef Id="ReleaseFiles"/>
+    </Feature>
+  </Product>
+</Wix>

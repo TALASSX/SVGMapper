@@ -57,11 +57,13 @@ jobs:
           Write-Output "Locating MakeAppx.exe..."
           $makeappx = (Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin' -Recurse -Filter MakeAppx.exe -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
           if (-not $makeappx) { Write-Error "MakeAppx.exe not found. Ensure Windows SDK is installed."; exit 1 }
-          $staging = "$PWD\artifacts\msix_staging"
+          # Use runner temp for staging to avoid copying artifacts into itself
+          $staging = Join-Path $env:RUNNER_TEMP 'msix_staging'
+          if (Test-Path "$PWD\artifacts\msix_staging") { Remove-Item "$PWD\artifacts\msix_staging" -Recurse -Force }
           if (Test-Path $staging) { Remove-Item $staging -Recurse -Force }
           New-Item -ItemType Directory -Path $staging -Force | Out-Null
-          Copy-Item "$PWD\artifacts\*" $staging -Recurse -Force
-          Copy-Item "$PWD\installer\AppxManifest.xml" "$staging\AppxManifest.xml" -Force
+          Copy-Item "$PWD\artifacts\*" -Destination $staging -Recurse -Force
+          Copy-Item "$PWD\installer\AppxManifest.xml" -Destination "$staging\AppxManifest.xml" -Force
           Write-Output "Packing MSIX to artifacts/SVGMapper.msix"
           & $makeappx pack /d $staging /p "$PWD\artifacts\SVGMapper.msix"
           Write-Output "MSIX created at: $PWD\artifacts\SVGMapper.msix"

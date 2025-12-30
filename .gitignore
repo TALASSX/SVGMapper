@@ -58,3 +58,9 @@ build/
 
 # Exported artifacts
 export.svg
+
+# Local artifacts and certs
+artifacts_download/
+selfsigned.pfx
+zip_inspect_v1_0_1/
+release/SVGMapper.Minimal.zip

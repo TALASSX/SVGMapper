@@ -9,6 +9,7 @@
     <DisplayName>SVGMapper</DisplayName>
     <PublisherDisplayName>Sai Teja Talasila</PublisherDisplayName>
     <Description>SVGMapper floor plan tool</Description>
+    <Logo>Assets\Logo.png</Logo>
   </Properties>
 
   <Dependencies>

@@ -42,4 +42,4 @@ Contributing
 - Make changes on a branch, open PRs against `main`.
 
 License
-- Add your license here.
+- MIT License (see LICENSE file).

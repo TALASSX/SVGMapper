@@ -61,6 +61,21 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -NonInteractive -File .github/scripts/build_msi.ps1
 
+      - name: Code-sign MSI (optional, requires certificate)
+        shell: pwsh
+        run: |
+          # Requires a code signing certificate (e.g., PFX file) stored as a secret
+          # Set CERT_PATH, CERT_PASSWORD in repository secrets
+          if ($env:CERT_PATH -and $env:CERT_PASSWORD) {
+            signtool sign /f $env:CERT_PATH /p $env:CERT_PASSWORD /t http://timestamp.digicert.com /d "SVGMapper Installer" artifacts/SVGMapper.Installer.msi
+            Write-Output "MSI signed successfully"
+          } else {
+            Write-Output "No certificate provided, skipping code signing"
+          }
+        env:
+          CERT_PATH: ${{ secrets.CERT_PATH }}
+          CERT_PASSWORD: ${{ secrets.CERT_PASSWORD }}
+
       - name: Create GitHub Release and Upload Assets
         uses: softprops/action-gh-release@v1
         with:

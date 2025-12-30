@@ -7,12 +7,21 @@ Files to know
 - `release/SVGMapper.Minimal.exe` — runnable application (release build)
 
 How to run
+- If you downloaded the `SVGMapper` folder (or ZIP), extract it, open the folder, then open the `release` folder and **double-click** `SVGMapper.Minimal.exe` to launch the application.
 - Double-click `release/SVGMapper.Minimal.exe` on Windows.
 - Or run from PowerShell:
 
 ```powershell
 & .\release\SVGMapper.Minimal.exe
 ```
+
+Quick notes
+- If Windows blocks the app, right‑click the EXE → Properties → **Unblock**, or run:
+
+```powershell
+Unblock-File "path\to\SVGMapper.Minimal.exe"
+```
+- Verify the file's SHA256 before running (see release page and `CHANGELOG.md`).
 
 Installation (via MSI installer)
 - Download the latest MSI from [GitHub Releases](https://github.com/TALASSX/SVGMapper/releases).

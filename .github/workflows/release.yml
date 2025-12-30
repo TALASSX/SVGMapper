@@ -87,6 +87,7 @@ jobs:
           $ReleaseDir = "$PWD\release"
           if (-not (Test-Path $ReleaseDir)) { Write-Output "No release folder found; skipping MSI build"; exit 0 }
           $art = "$PWD\artifacts"
+          if (-not (Test-Path $art)) { New-Item -ItemType Directory -Path $art | Out-Null }
           $productWxs = "$PWD\installer\Product.wxs"
           $releaseWxs = "$art\ReleaseFiles.wxs"
           $prodWixobj = "$art\Product.wixobj"

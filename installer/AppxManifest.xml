@@ -35,8 +35,10 @@
   </Capabilities>
 
   <Extensions>
-    <desktop:Extension Category="windows.fullTrustProcess" Executable="SVGMapper.Minimal.exe">
-      <desktop:FullTrustProcess />
-    </desktop:Extension>
+    <Extension Category="windows.fullTrustProcess" EntryPoint="Windows.FullTrustApplication">
+      <desktop:FullTrustProcess>
+        <desktop:Executable>SVGMapper.Minimal.exe</desktop:Executable>
+      </desktop:FullTrustProcess>
+    </Extension>
   </Extensions>
 </Package>
